@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option csharp_namespace = "BTG.HydroLoop.Analytics.Api.Protos";
+
+package waterlevel;
+
+// gRPC Service to ingest water level telemetry from physical or simulated devices
+service WaterLevelService {
+  // Pushes a single telemetry reading to the monitoring backend
+  rpc PushTelemetry (TelemetryRequest) returns (TelemetryResponse);
+}
+
+// Represents a single water level reading from a tank
+message TelemetryRequest {
+  string tank_id = 1;                  // Unique identifier of the cellulose mixing tank
+  double water_level_percentage = 2;   // Percentage of water level in the range [0.0, 100.0]
+  int64 timestamp_utc = 3;             // Unix timestamp in seconds representing the telemetry capture time
+}
+
+// Acknowledgment response of the telemetry ingestion operation
+message TelemetryResponse {
+  bool success = 1;                    // True if telemetry was successfully validated and ingested
+  string message = 2;                  // Explanatory message (e.g., success message or validation error details)
+}

@@ -1,0 +1,125 @@
+<div class="dashboard-container">
+  <!-- Live Background Ambient Mesh -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- 1. Header -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <svg class="hydroloop-logo" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="url(#logo-grad)" stroke-width="4" stroke-dasharray="200" />
+          <path d="M 50 15 C 30 15, 20 35, 20 50 C 20 65, 35 85, 50 85 C 65 85, 80 65, 80 50 C 80 35, 70 15, 50 15 Z" fill="none" stroke="var(--accent-cyan)" stroke-width="5" stroke-dasharray="150" />
+          <circle cx="50" cy="50" r="10" fill="var(--accent-blue)" opacity="0.8" />
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--accent-cyan)" />
+              <stop offset="100%" stop-color="var(--accent-blue)" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="brand-text">
+          <h1>BTG HydroLoop</h1>
+          <span class="sub-brand">CELLULOSE INTEGRATED TELEMETRY SUITE</span>
+        </div>
+      </div>
+      <p class="section-desc">Continuous real-time mixing tank water level and ingestion pipeline analytics</p>
+    </div>
+    <div class="header-right">
+      <div class="connection-status" [class.disconnected]="connectionStatus === 'disconnected'">
+        <span class="material-symbols-outlined status-icon">
+          {{ connectionStatus === 'connected' ? 'sensors' : 'sensors_off' }}
+        </span>
+        <span class="status-text">{{ connectionStatus === 'connected' ? 'SignalR Active' : 'Offline' }}</span>
+        <span class="status-dot"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. Danger Alert Banner -->
+  <div *ngIf="isAlertActive" class="alert-banner-glass">
+    <div class="alert-border-pulse"></div>
+    <div class="alert-banner-content">
+      <div class="alert-icon-wrapper">
+        <span class="material-symbols-outlined alert-icon-pulse">warning</span>
+      </div>
+      <div class="alert-text">
+        <h3>CRITICAL EXCURSION ALARM</h3>
+        <p>Mixing tank water level is at <strong class="glow-alert">{{ stats.current }}%</strong>, exceeding the maximum safe operating threshold of <strong>{{ config.safetyThreshold }}%</strong>.</p>
+      </div>
+      <div class="alert-actions">
+        <span class="alert-badge">BREACH IMMEDIATE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Key Metrics Cards -->
+  <section class="dashboard-grid">
+    <app-metric-card
+      [label]="'Current Water Level'"
+      [value]="stats.current"
+      [isHero]="true"
+      [isCritical]="stats.current > config.safetyThreshold"
+      [isWarning]="stats.current >= 70 && stats.current <= config.safetyThreshold">
+    </app-metric-card>
+
+    <app-metric-card
+      [label]="'Average (Last ' + config.maxHistoryLength + ')'"
+      [value]="stats.avg"
+      [icon]="'analytics'"
+      [iconClass]="''"
+      [caption]="'Historical Rolling Average'">
+    </app-metric-card>
+
+    <app-metric-card
+      [label]="'Peak (Last ' + config.maxHistoryLength + ')'"
+      [value]="stats.max"
+      [icon]="'trending_up'"
+      [iconClass]="'critical-box'"
+      [isCritical]="stats.max > config.safetyThreshold"
+      [caption]="stats.max > config.safetyThreshold ? '⚠️ Breach Threshold Passed' : 'Max Recorded Level'">
+    </app-metric-card>
+
+    <app-metric-card
+      [label]="'Minimum (Last ' + config.maxHistoryLength + ')'"
+      [value]="stats.min"
+      [icon]="'trending_down'"
+      [iconClass]="'info-box'"
+      [caption]="'Min Recorded Level'">
+    </app-metric-card>
+  </section>
+
+  <!-- 4. Visualizations Grid -->
+  <div class="visuals-container">
+    <app-telemetry-chart
+      [readings]="readings"
+      [isAlertActive]="isAlertActive"
+      [safetyThreshold]="config.safetyThreshold">
+    </app-telemetry-chart>
+
+    <app-tank-visualizer
+      [currentLevel]="stats.current"
+      [isAlertActive]="isAlertActive"
+      [tankId]="readings.length > 0 ? readings[readings.length - 1].tankId : 'Tank-BTG-01'"
+      [safetyThreshold]="config.safetyThreshold">
+    </app-tank-visualizer>
+  </div>
+
+  <!-- 5. Simulator & Control Grid -->
+  <section class="dashboard-grid control-grid" style="grid-template-columns: 1fr 1fr;">
+    <app-telemetry-simulator
+      [safetyThreshold]="config.safetyThreshold"
+      [warningThreshold]="70.0"
+      [simulatorUpdateIntervalMs]="config.simulatorUpdateIntervalMs"
+      [minBound]="config.simulatorMinBound"
+      [maxBound]="config.simulatorMaxBound">
+    </app-telemetry-simulator>
+
+    <app-telemetry-log-table
+      [readings]="readings"
+      [maxHistoryLength]="config.maxHistoryLength"
+      [safetyThreshold]="config.safetyThreshold"
+      [warningThreshold]="70.0">
+    </app-telemetry-log-table>
+  </section>
+</div>
