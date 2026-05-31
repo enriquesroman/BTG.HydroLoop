@@ -1,0 +1,134 @@
+<div class="card chart-card">
+  <div class="chart-header">
+    <div class="chart-title">
+      <span class="tag">REAL-TIME INGESTION STREAM</span>
+      <h2>Water Level Telemetry Trend</h2>
+      <p>Interpolated vector graph of the last {{ readings.length }} readings</p>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item">
+        <span class="legend-color water-level"></span>
+        <span>Water Level</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color threshold"></span>
+        <span>Breach Threshold ({{ safetyThreshold }}%)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-wrapper">
+    <svg class="chart-svg" [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-cyan)" />
+          <stop offset="100%" stop-color="var(--accent-blue)" />
+        </linearGradient>
+        <linearGradient id="chart-gradient-critical" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-red)" />
+          <stop offset="100%" stop-color="var(--accent-orange)" />
+        </linearGradient>
+        <linearGradient id="area-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-cyan)" stop-opacity="0.25" />
+          <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0.0" />
+        </linearGradient>
+        <linearGradient id="area-gradient-critical" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-red)" stop-opacity="0.25" />
+          <stop offset="100%" stop-color="var(--accent-red)" stop-opacity="0.0" />
+        </linearGradient>
+        <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      <g class="grid-lines-y">
+        <g *ngFor="let level of yGridLevels">
+          <line class="grid-line" 
+                [attr.x1]="padding.left" 
+                [attr.y1]="getGridY(level)" 
+                [attr.x2]="svgWidth - padding.right" 
+                [attr.y2]="getGridY(level)"></line>
+          <text class="axis-text" 
+                [attr.x]="padding.left - 15" 
+                [attr.y]="getGridY(level) + 4" 
+                text-anchor="end">{{ level }}%</text>
+        </g>
+      </g>
+
+      <g class="grid-lines-x">
+        <line *ngFor="let xGrid of xGridLines" 
+              class="grid-line" 
+              [attr.x1]="xGrid" 
+              [attr.y1]="padding.top" 
+              [attr.x2]="xGrid" 
+              [attr.y2]="svgHeight - padding.bottom"></line>
+      </g>
+
+      <line class="axis-line" 
+            [attr.x1]="padding.left" 
+            [attr.y1]="svgHeight - padding.bottom" 
+            [attr.x2]="svgWidth - padding.right" 
+            [attr.y2]="svgHeight - padding.bottom"></line>
+      <line class="axis-line" 
+            [attr.x1]="padding.left" 
+            [attr.y1]="padding.top" 
+            [attr.x2]="padding.left" 
+            [attr.y2]="svgHeight - padding.bottom"></line>
+
+      <path *ngIf="areaPath" 
+            [attr.d]="areaPath" 
+            [attr.fill]="isAlertActive ? 'url(#area-gradient-critical)' : 'url(#area-gradient)'"></path>
+
+      <path *ngIf="linePath" 
+            [attr.d]="linePath" 
+            [class.critical-path]="isAlertActive"
+            class="chart-path"
+            filter="url(#neon-glow)"></path>
+
+      <line class="threshold-line" 
+            [attr.x1]="padding.left" 
+            [attr.y1]="thresholdY" 
+            [attr.x2]="svgWidth - padding.right" 
+            [attr.y2]="thresholdY"></line>
+
+      <g>
+        <circle *ngFor="let p of chartPoints" 
+                [attr.cx]="p.x" 
+                [attr.cy]="p.y" 
+                [attr.r]="6" 
+                [class.critical-point]="p.isCritical"
+                class="chart-point"
+                (mouseenter)="showPointTooltip($event, p)"
+                (mouseleave)="hidePointTooltip()"></circle>
+      </g>
+
+      <g class="x-axis-labels">
+        <g *ngFor="let p of chartPoints; let i = index; let last = last; let first = first">
+          <text *ngIf="first || last || (i % 4 === 0 && i !== readings.length - 1)" 
+                class="axis-text" 
+                [attr.x]="p.x" 
+                [attr.y]="svgHeight - padding.bottom + 22" 
+                text-anchor="middle">
+            {{ formatTime(p.reading.timestampUtc) }}
+          </text>
+        </g>
+      </g>
+    </svg>
+
+    <div *ngIf="tooltip.show" class="chart-tooltip-glass" [style.left.px]="tooltip.x" [style.top.px]="tooltip.y">
+      <div class="tooltip-time">
+        <span class="material-symbols-outlined inline-icon">schedule</span>
+        {{ tooltip.time }}
+      </div>
+      <div class="tooltip-val" [class.critical-val]="tooltip.isCritical">
+        <span class="material-symbols-outlined inline-icon">water_drop</span>
+        <strong>{{ tooltip.value }}%</strong>
+      </div>
+      <div class="tooltip-status">
+        <span class="bullet" [class.crit-bullet]="tooltip.isCritical"></span>
+        {{ tooltip.isCritical ? 'Critical Level Breach' : 'Operational Limit' }}
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BTG.HydroLoop.Analytics.Api/BTG.HydroLoop.Analytics.Api.csproj" />
+  <Project Path="BTG.HydroLoop.Analytics.Tests/BTG.HydroLoop.Analytics.Tests.csproj" />
+</Solution>
